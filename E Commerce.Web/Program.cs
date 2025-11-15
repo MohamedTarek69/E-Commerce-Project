@@ -1,12 +1,20 @@
 
+using E_Commerce.Domain.Contracts;
+using E_Commerce.Persistence.Data.DataSeed;
 using E_Commerce.Persistence.Data.DbContexts;
+using E_Commerce.Persistence.Repositories;
+using E_Commerce.Services.MappingProfiles;
+using E_Commerce.Services.Services;
+using E_Commerce.Services_Abstraction.Interfaces;
+using E_Commerce.Web.Extentions;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace E_Commerce.Web
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -22,11 +30,26 @@ namespace E_Commerce.Web
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
-
+            builder.Services.AddScoped<IDataIntializer, DataIntializer>();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            //builder.Services.AddAutoMapper(X => X.AddProfile<ProductProfile>());
+            builder.Services.AddAutoMapper(typeof(ServicesAssemblyRefrance).Assembly);
+            //builder.Services.AddAutoMapper(X => X.LicenseKey = "", typeof(ProductProfile).Assembly);
+            builder.Services.AddScoped<IProductServices, ProductService>();
+            builder.Services.AddTransient<ProductPictureUrlResolver>();
             #endregion
 
             var app = builder.Build();
 
+            #region DataSeed - Apply Migration
+
+            await app.MigrateDatabaseAsync();
+            await app.SeedDataAsync();
+
+
+            #endregion
+
+            #region Configure the HTTP request pipeline
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -36,12 +59,16 @@ namespace E_Commerce.Web
 
             app.UseHttpsRedirection();
 
+            app.UseStaticFiles();
+
             app.UseAuthorization();
 
 
-            app.MapControllers();
+            app.MapControllers(); 
 
-            app.Run();
+            #endregion
+
+            await app.RunAsync();
         }
     }
 }
