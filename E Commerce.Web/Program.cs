@@ -6,7 +6,10 @@ using E_Commerce.Persistence.Repositories;
 using E_Commerce.Services.MappingProfiles;
 using E_Commerce.Services.Services;
 using E_Commerce.Services_Abstraction.Interfaces;
+using E_Commerce.Web.CustomMiddleWares;
 using E_Commerce.Web.Extentions;
+using E_Commerce.Web.Factories;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using System.Threading.Tasks;
@@ -44,6 +47,13 @@ namespace E_Commerce.Web
             });
             builder.Services.AddScoped<IBasketRepository, BasketRepository>();
             builder.Services.AddScoped<IBasketService, BasketService>();
+            builder.Services.AddScoped<ICacheRepository, CacheRepository>();
+            builder.Services.AddScoped<ICacheService, CacheService>();
+
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = ApiResponseFactory.GenerateApiValidationResponse;
+            });
 
             #endregion
 
@@ -59,6 +69,26 @@ namespace E_Commerce.Web
 
             #region Configure the HTTP request pipeline
             // Configure the HTTP request pipeline.
+            //app.Use(async (Context, Next) =>
+            //{
+            //    try
+            //    {
+            //        await Next.Invoke();
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        Console.WriteLine(ex.Message);
+            //        Context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            //        await Context.Response.WriteAsJsonAsync(new
+            //        {
+            //            StatusCode = StatusCodes.Status500InternalServerError,
+            //            Error = $"An UnExpected Error Ocured : {ex.Message}" 
+            //        });
+            //    }
+            //}
+            //);
+             app.UseMiddleware<ExceptionHandlerMiddleWare>();
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -68,9 +98,6 @@ namespace E_Commerce.Web
             app.UseHttpsRedirection();
 
             app.UseStaticFiles();
-
-            app.UseAuthorization();
-
 
             app.MapControllers(); 
 
