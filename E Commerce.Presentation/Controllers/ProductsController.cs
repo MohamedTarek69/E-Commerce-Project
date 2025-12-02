@@ -12,9 +12,7 @@ using System.Threading.Tasks;
 
 namespace E_Commerce.Presentation.Controllers
 {
-    [ApiController]
-    [Route("api/[Controller]")]
-    public class ProductsController : ControllerBase
+    public class ProductsController : ApiBaseController
     {
         private readonly IProductServices _productServices;
 
@@ -37,15 +35,7 @@ namespace E_Commerce.Presentation.Controllers
         {
             //throw new Exception();
             var Product = await _productServices.GetProductByIdAsync(id);
-            //if (Product == null)
-            //    return NotFound(new ProblemDetails
-            //    {
-            //        Title = "Not Found",
-            //        Detail = $"Product with id {id} is not found",
-            //        Status = StatusCodes.Status404NotFound,
-            //        Instance = HttpContext.Request.Path
-            //    });
-            return Ok(Product);
+            return HandleResult<ProductDTO>(Product);
         }
 
         [HttpGet("brands")]
